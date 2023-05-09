@@ -2,8 +2,9 @@ from actions import Device as DeviceAction
 from helpers import parse_enviroment_capture
 from models.device import DeviceMode, DeviceStatus
 from repositories import Device, Enviroment
-from services.model import can_turn_on_light, can_turn_on_pump
+from services.model import can_turn_on_light, can_turn_on_pump, is_turn_on_pump
 from services.cache import CACHE
+from services.logging import LOGGER
 
 
 def capture(raw_payload: str):
@@ -14,7 +15,10 @@ def capture(raw_payload: str):
 
     if pump["mode"] == DeviceMode.AUTO:
         humidity = enviroment["humidity"]
-        status = DeviceStatus.ON if can_turn_on_pump(humidity) else DeviceStatus.OFF
+        light_value = enviroment["light"]
+        # status = DeviceStatus.ON if can_turn_on_pump(humidity) else DeviceStatus.OFF
+        status = DeviceStatus.ON if is_turn_on_pump(humidity, light_value) else DeviceStatus.OFF
+        LOGGER.info(f"status {status}")
         if pump["status"] != status:
             DeviceAction.set_status(pump, status, must_be_manual=False)
 
